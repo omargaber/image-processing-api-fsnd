@@ -1,5 +1,6 @@
 import express from 'express';
 import { existsSync, mkdirSync } from 'fs';
+import sharp from 'sharp';
 
 // Function to validate if the thumb directory exists or not.
 const initializeDir = (): void => {
@@ -43,15 +44,15 @@ const requestValidator = (
   res: express.Response,
   next: Function
 ): void => {
-  var flag: boolean = true;
-  var missingParams: string[] = [];
+  let flag = true;
+  const missingParams: string[] = [];
 
   if (!req.query.fileName && !req.query.width && !req.query.height) {
     res.send(
       "Index Route Reached. Please send in the parameters 'fileName', 'width' and 'height'"
     );
+    return;
   }
-  console.log(missingParams);
 
   if (!req.query.fileName) {
     flag = false;
@@ -66,12 +67,33 @@ const requestValidator = (
     missingParams.push('height');
   }
   if (!flag) {
-    res.write(
-      `Bad Request. You are missing [${missingParams}] query parameters.\n`
-    );
+    res
+      .status(400)
+      .write(
+        `Bad Request. You are missing [${missingParams}] query parameters.\n`
+      );
   }
 
   next();
 };
 
-export { initializeDir, requestValidator, thumbExists };
+const imageResize = async (
+  imagePath: string,
+  width: number,
+  height: number,
+  destinationPath: string
+): Promise<boolean> => {
+  try {
+    await sharp(imagePath)
+      .resize(width, height)
+      .toFile(destinationPath)
+      .then(() => {
+        console.log('Image resized successfully.');
+      });
+    return true;
+  } catch (err) {
+    return false;
+  }
+};
+
+export { initializeDir, requestValidator, thumbExists, imageResize };

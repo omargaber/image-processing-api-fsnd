@@ -14,52 +14,73 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const utils_1 = require("../../utils/utils");
-const sharp_1 = __importDefault(require("sharp"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = require("fs");
 const images = express_1.default.Router();
 images.get('/', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     /*
-          There is a middleware function handling validation
-          for the request. The first stage of the endpoint is
-          to make sure if the file with the parameters passed
-          already exists then to load that file.
-      */
+        There is a middleware function handling validation
+        for the request. The first stage of the endpoint is
+        to make sure if the file with the parameters passed
+        already exists then to load that file.
+    */
     const fileExists = (0, utils_1.thumbExists)(req);
     if (!fileExists[0]) {
         /*
-                Since the file queried doesn't exist, we need to check the original file,
-                read it, resize it, save it and then load it.
-            */
+              Since the file queried doesn't exist, we need to check the original file,
+              read it, resize it, save it and then load it.
+          */
         const originalPath = `./assets/full/${req.query.fileName}.jpg`;
         const width = parseInt(req.query.width);
         const height = parseInt(req.query.height);
         /*
-                We surely need to handle the case where the original fileName
-                doesn't exist in the first place.
-            */
+          We need to verify that the passed parameters are in fact numbers.
+      */
+        if (isNaN(width) || isNaN(height)) {
+            if (isNaN(width)) {
+                res
+                    .status(400)
+                    .write('Width parameter is missing or not a number.\n');
+            }
+            if (isNaN(height)) {
+                res
+                    .status(400)
+                    .write('Height parameter is missing or not a number.\n');
+            }
+            res.end();
+            return;
+        }
+        /*
+              We surely need to handle the case where the original fileName
+              doesn't exist in the first place.
+          */
         if (!(0, fs_1.existsSync)(originalPath)) {
             const files = (0, fs_1.readdirSync)('./assets/full/');
-            console.log(files);
             res
                 .status(400)
-                .end(`File doesn't exist. Available files are: [${files.toString()}]`);
+                .end(`File parameter missing or doesn't exist. Available files are: [${files.toString()}]`);
+            return;
         }
         else {
-            yield (0, sharp_1.default)(originalPath)
-                .resize(width, height)
-                .toFile(fileExists[1])
-                .then(() => {
+            /*
+              Since the file exists, now we proceed to resizing the image.
+          */
+            const resizeSuccess = yield (0, utils_1.imageResize)(originalPath, width, height, fileExists[1]);
+            if (resizeSuccess) {
                 res.sendFile(path_1.default.resolve(fileExists[1]), (err) => {
                     if (err) {
                         console.log(err);
                         res.send(err.message);
                     }
                     else {
-                        console.log('File converted and sent');
+                        console.log('Sent file to client.');
                     }
                 });
-            });
+            }
+            else {
+                res.status(422).send('An error occurred while processing the image.');
+                return;
+            }
         }
     }
     else {

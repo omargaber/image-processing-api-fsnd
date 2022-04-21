@@ -27,14 +27,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const router_1 = __importDefault(require("./router"));
+const index_1 = __importDefault(require("./router/index"));
 const utils = __importStar(require("./utils/utils"));
 const app = (0, express_1.default)();
 const port = 3000;
-app.use('/api', express_1.default.json(), router_1.default);
+app.use('/api', express_1.default.json(), index_1.default);
 app.listen(port, () => {
-    // At app startup, we'll call the utility function
-    // that initializes the thumb directory if it doesn't exist
+    /*
+      At app startup, we'll call the utility function
+      that initializes the thumb directory if it doesn't exist
+    */
     utils.initializeDir();
     console.log(`Server started at port ${port}`);
 });

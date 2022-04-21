@@ -20,7 +20,7 @@ node build/index.js
 
 A sample request to try out.
 ```
-http://localhost:3000/api/fileName=doggo&width=200&height=100
+http://localhost:3000/api?fileName=doggo&width=200&height=100
 ```
 
 The sample image available is `doggo.jpg` found in the directory `assets/full`.

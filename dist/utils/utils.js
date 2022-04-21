@@ -1,7 +1,20 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.thumbExists = exports.requestValidator = exports.initializeDir = void 0;
+exports.imageResize = exports.thumbExists = exports.requestValidator = exports.initializeDir = void 0;
 const fs_1 = require("fs");
+const sharp_1 = __importDefault(require("sharp"));
 // Function to validate if the thumb directory exists or not.
 const initializeDir = () => {
     // First step is to make sure the directory /assets/thumb exists or not
@@ -40,12 +53,12 @@ Middleware function to make sure that the passed request
 contains all required parameters
 */
 const requestValidator = (req, res, next) => {
-    var flag = true;
-    var missingParams = [];
+    let flag = true;
+    const missingParams = [];
     if (!req.query.fileName && !req.query.width && !req.query.height) {
         res.send("Index Route Reached. Please send in the parameters 'fileName', 'width' and 'height'");
+        return;
     }
-    console.log(missingParams);
     if (!req.query.fileName) {
         flag = false;
         missingParams.push('fileName');
@@ -59,8 +72,25 @@ const requestValidator = (req, res, next) => {
         missingParams.push('height');
     }
     if (!flag) {
-        res.write(`Bad Request. You are missing [${missingParams}] query parameters.\n`);
+        res
+            .status(400)
+            .write(`Bad Request. You are missing [${missingParams}] query parameters.\n`);
     }
     next();
 };
 exports.requestValidator = requestValidator;
+const imageResize = (imagePath, width, height, destinationPath) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        yield (0, sharp_1.default)(imagePath)
+            .resize(width, height)
+            .toFile(destinationPath)
+            .then(() => {
+            console.log('Image resized successfully.');
+        });
+        return true;
+    }
+    catch (err) {
+        return false;
+    }
+});
+exports.imageResize = imageResize;
